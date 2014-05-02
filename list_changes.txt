@@ -1,0 +1,24 @@
+Most of the functions have been added to src_binary/private/binary_separation.f
+
+
+Functions:
+-check_CE
+-check_merger
+-accretor_mass_radius_relation
+-calc_naive_A_f
+
+
+Set defaults in defaults/binary_controls.defaults:
+-“do_CE = .false.”
+-“alpha_CE = 1.0”
+
+Things to check:
+-lower_limit_on_period_in_hours
+-b% xfer_fraction, b% mdot_system_transfer, b% mtransfer_rate
+
+
+Adjustments to the makefile:
+-binary_separation.f is included in $LIB_OBJS
+-$LIB is changed from libbinary.a to libbinary_CE.a
+-statement added: BINARY_INCLUDES = -I$(MOD_DEFAULTS_DIR)
+-$(BINARY_INCLUDES) is now added to the “COMPILE =“ line

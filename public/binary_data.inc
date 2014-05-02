@@ -26,8 +26,9 @@
              have_radiative_core(2), have_radiative_core_old(2), have_radiative_core_older(2)
         
           ! INFO FOR COMMON ENVELOPE EVOLUTION
-          real(dp) :: E_kin_spec, E_enth_spec, E_grav_spec
-          real(dp) :: Delm2, E_bind_ml, E_orb_init, af_E_orb_fin
+!          real(dp) :: E_kin_spec, E_enth_spec, E_grav_spec
+!          real(dp) :: Delm2, E_bind_ml, E_orb_init, af_E_orb_fin
+!          real(dp) :: alpha_CE
 
           real(dp), pointer, dimension(:) :: CE_rho_old, CE_P_old, CE_vel_old
 

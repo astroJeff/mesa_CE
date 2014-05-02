@@ -131,6 +131,7 @@
       subroutine binary_evolve_step(b)
          use utils_lib, only: is_bad_num
          use binary_jdot, only: get_jdot
+         use binary_separation
          type(binary_info), pointer :: b
          
          include 'formats.inc'
@@ -161,30 +162,21 @@
          b% r(1) = b% s1% photosphere_r*Rsun ! radius at photosphere in cm
          if (b% evolve_both_stars) b% r(2) = b% s2% photosphere_r*Rsun ! radius at photosphere in cm
 
-         ! solve the winds in the system for jdot calculation,
-         ! these don't include mass lost due to mass_transfer_efficiency < 1.0
-         b% mdot_system_wind(b% d_i) = b% s_donor% mstar_dot - b% mtransfer_rate
-         if (b% evolve_both_stars) then
-            b% mdot_system_wind(b% a_i) = b% s_accretor% mstar_dot + &
-                b% mtransfer_rate * b% xfer_fraction
+
+
+! ------------------ New Functions to Calculate Ang Mom. Change ------------------- !
+
+         if (b% do_CE) b% check_CE = check_CE(b)
+
+         if (b% check_CE) then
+            call new_separation_CE(b)
          else
-            b% mdot_system_wind(b% a_i) = 0.0d0
-         end if
-
-         ! get jdot and update orbital J
-         b% jdot = get_jdot(b% mtransfer_rate, b% xfer_fraction)
-         b% angular_momentum_j = b% angular_momentum_j + b% jdot*b% s1% time_step*secyer
-
-         if (b% angular_momentum_j <= 0) then
-            stop 'bad angular_momentum_j'
-         end if
+            call new_separation_jdot(b)
+         endif
          
-         ! use the new j to calculate new separation
-         
-         b% separation = ((b% angular_momentum_j/(b% m(1)*b% m(2)))**2) *&
-             (b% m(1)+b% m(2)) / b% s1% cgrav(1)
-         if (b% separation < b% min_binary_separation) &
-            b% min_binary_separation = b% separation
+! ------------------ New Functions to Calculate Ang Mom. Change ------------------- !
+
+        
         
          write(*,*) "New Separation = ", b% separation
  
