@@ -12,6 +12,18 @@ Set defaults in defaults/binary_controls.defaults:
 -“do_CE = .false.”
 -“alpha_CE = 1.0”
 
+Added arrays:
+-CE_lnE_old
+-CE_vel_old
+-CE_P_old
+-CE_rho_old
+
+Added to binary_evolve.f:
+-subroutine intial_CE_setup
+-in binary_check_model - hook to stop if merges
+-in binary_check_model - hook to stop if avoid CE
+
+
 Things to check:
 -lower_limit_on_period_in_hours
 -b% xfer_fraction, b% mdot_system_transfer, b% mtransfer_rate

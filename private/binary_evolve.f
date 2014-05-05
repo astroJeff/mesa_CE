@@ -133,6 +133,9 @@
          use binary_jdot, only: get_jdot
          use binary_separation
          type(binary_info), pointer :: b
+         type(star_info), pointer :: s
+         
+         integer :: ierr
          
          include 'formats.inc'
 
@@ -166,13 +169,48 @@
 
 ! ------------------ New Functions to Calculate Ang Mom. Change ------------------- !
 
-         if (b% do_CE) b% check_CE = check_CE(b)
+         s => b% s_donor
+
+         
+         if (b% do_CE) then
+
+            if (.not. b% started_rlof) then
+                call initial_CE_setup(b)
+                b% started_rlof = .true.
+                b% started_CE = .false.
+                b% max_mdot_reached = 0.0
+            end if
+
+             if (b% mtransfer_rate .gt. b% max_mdot_reached) then
+                b% max_mdot_reached = b% mtransfer_rate
+             end if
+             
+             b% check_CE = check_CE(b)
+         end if
+
 
          if (b% check_CE) then
             call new_separation_CE(b)
          else
             call new_separation_jdot(b)
          endif
+
+
+
+         if (b% do_CE .and. b% started_rlof) then
+            deallocate(b% CE_rho_old)
+            deallocate(b% CE_P_old)
+            deallocate(b% CE_vel_old)
+            deallocate(b% CE_lnE_old)
+            allocate(b% CE_rho_old(size(s% rho)), stat=ierr)
+            allocate(b% CE_P_old(size(s% P)), stat=ierr)
+            allocate(b% CE_vel_old(size(s% v)), stat=ierr)
+            allocate(b% CE_lnE_old(size(s% lnE)), stat=ierr)
+            b% CE_rho_old = s% rho
+            b% CE_P_old = s% P
+            b% CE_vel_old = s% v
+            b% CE_lnE_old = s% lnE    
+         end if
          
 ! ------------------ New Functions to Calculate Ang Mom. Change ------------------- !
 
@@ -246,6 +284,22 @@
             binary_check_model = terminate
             write(*,*) 'terminate because binary period > upper_limit_on_period_in_hours'
          end if
+         
+         if (check_merger(b)) then
+            deallocate(b% CE_rho_old)
+            deallocate(b% CE_P_old)
+            deallocate(b% CE_vel_old)
+            deallocate(b% CE_lnE_old)  
+            binary_check_model = terminate      
+            write(*,*) 'terminate because system merged'
+         end if
+
+         if ((.not. b% started_CE) .and. b% r(b% d_i) .lt. 1.0d9) then
+           write(*,*) "terminate because system avoided common envelope"
+           binary_check_model = terminate               
+         endif
+
+         
 
          if (b% evolve_both_stars .and. b% s_accretor% photosphere_r*Rsun >= b% rl(b% a_i)) then
             if (b% s_accretor% photosphere_r*Rsun >= b% factor_for_contact_terminate * b% rl(b% a_i)) &
@@ -461,5 +515,28 @@
       ! the approximation of Eggleton 1983, apj 268:368-369
          rlobe = a*0.49d0*q*q/(0.6d0*q*q + log1p_cr(q))
       end function eval_rlobe
+      
+      subroutine initial_CE_setup(b)
+         type (binary_info), pointer :: b
+         type (star_info), pointer :: s
+         integer :: ierr
+         
+         s => b% s_donor
+
+         s% dxdt_nuc_factor = 0d0  ! To stop any nuclear burning to help out the solvers
+         s% mix_factor = 0d0  ! To stop mixing processes while in a CE
+         b% xfer_fraction = 0d0  ! So that no amount of mass is accreted by the accretor
+
+         allocate(b% CE_rho_old(size(s% rho)), stat=ierr)
+         allocate(b% CE_P_old(size(s% P)), stat=ierr)
+         allocate(b% CE_vel_old(size(s% v)), stat=ierr)
+         allocate(b% CE_lnE_old(size(s% lnE)), stat=ierr)
+         b% CE_rho_old = s% rho
+         b% CE_P_old = s% P
+         b% CE_vel_old = s% v
+         b% CE_lnE_old = s% lnE    
+
+
+      end subroutine initial_CE_setup
 
       end module binary_evolve

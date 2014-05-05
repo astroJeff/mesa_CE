@@ -30,10 +30,12 @@
 !          real(dp) :: Delm2, E_bind_ml, E_orb_init, af_E_orb_fin
 !          real(dp) :: alpha_CE
 
-          real(dp), pointer, dimension(:) :: CE_rho_old, CE_P_old, CE_vel_old
+          real(dp), pointer, dimension(:) :: CE_lnE_old, CE_rho_old, CE_P_old, CE_vel_old
+          real(dp) :: max_mdot_reached
 
           logical :: in_CE_flag, merger_flag, started_CE_flag, prev_CE_flag
           logical :: check_CE 
+          logical :: started_rlof, started_CE
 
           ! *************** end of info that is saved and restored for restarts  ***************
 

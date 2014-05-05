@@ -47,7 +47,7 @@
      
       end function check_CE
 
-      logical function check_merger(s)
+      logical function check_merger(b)
          use binary_def, only: binary_info
          type (binary_info), pointer :: b
          type (star_info), pointer :: s
@@ -131,9 +131,45 @@
       subroutine new_separation_CE(b)
          use binary_def, only: binary_info
          type (binary_info), pointer :: b
+         type (star_info), pointer :: s
          include 'formats.inc'
          
+         real(dp) :: Delm2, E_orb_init, af_E_orb_f
+         real(dp) :: E_bind_ml, E_int_spec, E_bind_spec, E_kin_spec, E_enth_spec
          
+         integer :: i
+         
+         s => b% s_donor
+
+         Delm2 = s% mstar_old - s% mstar
+         E_bind_ml = 0.0d0
+         i = 1
+         do while ((s% mstar_old * (1.0d0-s% q_old(i)) .le. Delm2) .and. (i < s% nz_old)) 
+            E_int_spec =  dexp(b% CE_lnE_old(i))
+            E_bind_spec = - standard_cgrav * s% mstar_old / dexp(s% xh_old(s% i_lnR,i))  
+            E_kin_spec = b% CE_vel_old(i) * b% CE_vel_old(i) / 2.0
+            E_enth_spec = b% CE_P_old(i) / b% CE_rho_old(i)
+            E_bind_ml = E_bind_ml - (E_int_spec + E_bind_spec + E_kin_spec + E_enth_spec) &
+                * s% mstar * s% dq(i)
+
+            i = i + 1
+         enddo
+
+         if (i > 1) then
+            E_int_spec =  dexp(b% CE_lnE_old(i))
+            E_bind_spec = - standard_cgrav * s% mstar_old / dexp(s% xh_old(s% i_lnR,i))  
+            E_kin_spec = b% CE_vel_old(i) * b% CE_vel_old(i) / 2.0
+            E_enth_spec = b% CE_P_old(i) / b% CE_rho_old(i)
+            E_bind_ml = E_bind_ml - (E_int_spec + E_bind_spec + E_kin_spec + E_enth_spec) &
+                * (Delm2 - s% mstar_old * (1.0d0 - s% q_old(i-1)))               
+         endif
+               
+
+         E_orb_init = b% alpha_CE * standard_cgrav * b% m_old(b% a_i)*Msun * s% mstar_old / (2.0d0 * b% separation)
+         af_E_orb_f = b% alpha_CE * standard_cgrav * b% m(b% a_i)*Msun * s% mstar / 2.0d0
+
+         b% separation = af_E_orb_f
+
       end subroutine new_separation_CE
 
 
