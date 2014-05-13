@@ -34,3 +34,14 @@ Adjustments to the makefile:
 -$LIB is changed from libbinary.a to libbinary_CE.a
 -statement added: BINARY_INCLUDES = -I$(MOD_DEFAULTS_DIR)
 -$(BINARY_INCLUDES) is now added to the “COMPILE =“ line
+
+Makefile header for project directory:
+-copied standard binary header in /mesa/utils to working dir
+-References lbinary_CE not lbinary: LOAD_MESA_BINARY_CE = -L$(MESA_LIB_DIR) -lbinary_CE $(STAR_LOAD_LIST)
+-Adjust make/makefile to reference this
+
+History column extras:
+-Added the dynamic timescale of the surface to data_for_extra_binary_history_columns
+
+To Do:
+-Put a tag
