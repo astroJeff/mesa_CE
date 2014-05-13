@@ -169,13 +169,16 @@
 
 ! ------------------ New Functions to Calculate Ang Mom. Change ------------------- !
 
-         s => b% s_donor
+!         s => b% s_donor
 
+         if (b% do_CE) b% check_CE = check_CE(b)
          
-         if (b% do_CE) then
+         if (b% do_CE .and. (dabs(b% mtransfer_rate) .gt. 1.0e-50)) then
+
+            write(*,*) "MASS TRANSFER HAS STARTED"
 
             if (.not. b% started_rlof) then
-                call initial_CE_setup(b)
+!                call initial_CE_setup(b)
                 b% started_rlof = .true.
                 b% started_CE = .false.
                 b% max_mdot_reached = 0.0
@@ -185,7 +188,6 @@
                 b% max_mdot_reached = b% mtransfer_rate
              end if
              
-             b% check_CE = check_CE(b)
          end if
 
 
@@ -195,28 +197,29 @@
             call new_separation_jdot(b)
          endif
 
+         write(*,*) b% check_CE
 
-
-         if (b% do_CE .and. b% started_rlof) then
+         if (1.0 > 2.0) then
+!         if (b% do_CE .and. b% started_rlof) then
             deallocate(b% CE_rho_old)
             deallocate(b% CE_P_old)
             deallocate(b% CE_vel_old)
             deallocate(b% CE_lnE_old)
-            allocate(b% CE_rho_old(size(s% rho)), stat=ierr)
-            allocate(b% CE_P_old(size(s% P)), stat=ierr)
-            allocate(b% CE_vel_old(size(s% v)), stat=ierr)
-            allocate(b% CE_lnE_old(size(s% lnE)), stat=ierr)
-            b% CE_rho_old = s% rho
-            b% CE_P_old = s% P
-            b% CE_vel_old = s% v
-            b% CE_lnE_old = s% lnE    
+            allocate(b% CE_rho_old(size(b% s1% rho)), stat=ierr)
+            allocate(b% CE_P_old(size(b% s1% P)), stat=ierr)
+            allocate(b% CE_vel_old(size(b% s1% v)), stat=ierr)
+            allocate(b% CE_lnE_old(size(b% s1% lnE)), stat=ierr)
+            b% CE_rho_old = b% s1% rho
+            b% CE_P_old = b% s1% P
+            b% CE_vel_old = b% s1% v
+            b% CE_lnE_old = b% s1% lnE    
          end if
          
 ! ------------------ New Functions to Calculate Ang Mom. Change ------------------- !
 
         
         
-         write(*,*) "New Separation = ", b% separation
+         write(*,'(A,1pe16.9)') "New Separation = ", b% separation
  
          b% period = 2*pi*sqrt(b% separation*b% separation*b% separation/&
                (b% s1% cgrav(1)*(b% m(1)+b% m(2)))) 
@@ -232,12 +235,13 @@
          if (is_bad_num(b% rl_relative_gap(1)) .or. is_bad_num(b% rl_relative_gap(2))) then
             stop 'error solving rl_rel_gap'
          end if
-
+         
       end subroutine
 
       integer function binary_check_model(b)
          use binary_mdot, only: rlo_mdot, check_implicit_rlo
          use binary_irradiation
+         use binary_separation
          type (binary_info), pointer :: b
 
          integer :: i, j, ierr

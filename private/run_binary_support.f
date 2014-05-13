@@ -179,10 +179,13 @@
                type (binary_info), pointer :: b
             end function how_many_extra_binary_history_columns
             
-            subroutine data_for_extra_binary_history_columns(b, n, names, vals, ierr)
+!            subroutine data_for_extra_binary_history_columns(b, n, names, vals, ierr)
+            subroutine data_for_extra_binary_history_columns(b, s, n, names, vals, ierr)
                use const_def, only: dp
                use binary_def, only: maxlen_binary_history_column_name, binary_info
+               use star_def, only: star_info
                type (binary_info), pointer :: b
+               type (star_info), pointer :: s
                integer, intent(in) :: n
                character (len=maxlen_binary_history_column_name) :: names(n)
                real(dp) :: vals(n)
@@ -451,14 +454,11 @@
                      result = worst_result(result, check_model(s, id, id_extra, extras_check_model))
                   end if
                end do
-
                if (result == keep_going) then
                   result = worst_result(result, binary_check_model(b))
                end if
-
                ! solve first binary timestep limit because star_pick_next_timestep needs it
                result = worst_result(result, binary_pick_next_timestep(b))
-
                if (result == keep_going) then
                   do i = 1, num_stars
                      id = b% star_ids(i)
@@ -467,6 +467,7 @@
                      result = worst_result(result, star_pick_next_timestep(id))
                   end do
                end if
+
                if (result == keep_going) then
                   call write_binary_history_info(b, &
                       how_many_extra_binary_history_columns, &
@@ -474,7 +475,7 @@
                   b% doing_first_model_of_run = .false.
                   exit step_loop
                end if
-               
+
                do i = 1, num_stars
 
                   id = b% star_ids(i)
@@ -495,7 +496,7 @@
                   end if
 
                end do
-               
+
                if (result == redo) then
                   do i = 1, num_stars
                      id = b% star_ids(i)
@@ -537,7 +538,7 @@
                first_try = .false.
                
             end do step_loop
-                        
+
             if (result == keep_going) then
                ! finish binary step first or redos become inconsistent
                if(result == keep_going) result = binary_finish_step(b)

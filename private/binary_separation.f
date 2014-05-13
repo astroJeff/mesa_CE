@@ -22,6 +22,14 @@
          type (binary_info), pointer :: b
          type (star_info), pointer :: s
          real(dp) :: mdot, rl2, R_accretor
+         CHARACTER(LEN=40) :: FMT_1
+         CHARACTER(LEN=40) :: FMT_2
+         
+         integer :: i
+         real(dp) :: temp_M, temp_R, temp_t
+         real(dp) :: sound_xing_time
+         real(dp) :: q_rl, q_rl_old, zeta_star, zeta_rl
+         
          include 'formats.inc'
          
          b => binary
@@ -29,21 +37,58 @@
 
          mdot = b% mtransfer_rate_old
 
-         R_accretor = accretor_mass_radius_relation(b% m2)
+         R_accretor = accretor_mass_radius_relation(b% m2 * msol)
          rl2 = b% rl(b% a_i)
-
-         if( dabs(mdot) > 1.0d0*(s% mstar)*dsqrt(standard_cgrav * s% rho(1))) then
+         FMT_1 = '(A,1pe16.9)'
+         FMT_2 = '(A,1pe16.9,A,1pe16.9)'
+         write(*,FMT_2) "Time step: ",b% s_donor% dt, " Accretion rate: ", b% mtransfer_rate_old
+         write(*,FMT_2) "mstar = ", s% mstar, " dynamical timescale = ", 1.0/dsqrt(standard_cgrav * s% rho(1))
+     !    write(*,FMT_1) "MESA calculated dynamical timescale = ", b% s_donor% dynamic_timescale
+     !    write(*,FMT_1) "Textbook dynamical timescale - sqrt(R^3/GM) = ", &
+     !          dsqrt(b% r(b% d_i)*b% r(b% d_i)*b% r(b% d_i)/standard_cgrav/b% m(b% d_i))
+     !    write(*,FMT_1) "Outer layer dynamical timescale = ", 1.0/dsqrt(standard_cgrav * s% rho(1))\
+         
+         write(*,'(3x(A,1pe16.9))') 'R_1 = ', b% r(b% d_i), ' R_2 = ', R_accretor, &
+               'separation = ', b% separation
+         i = 0
+         sound_xing_time = 0.0
+         do while(i .lt. s% nz)
+            i = i + 1
+            sound_xing_time = sound_xing_time + s% dr_div_csound(i)
+         enddo
+      !   write(*,FMT_1) "Sound crossing time of star = ", sound_xing_time
+ 
+      !   write(*,FMT_1) "Outer layer mass / Sound crossing time = ", s% dm(1) / sound_xing_time
+ 
+         temp_M = 0.0;
+         i = 0
+         temp_t = 1.0/dsqrt(standard_cgrav * s% rho(1))
+         do while((temp_M < s% dt * s% mstar/ temp_t) .and. (i .lt. s% nz))
+            i = i + 1
+            temp_M = temp_M + s% dm(i)
+         enddo
+!         write(*,*) "# of cells removed for instability to ensue = ", i
+!         write(*,FMT_1) "Percent of star radius required to reach this = ", (s% r(1) - s% r(i)) / s% r(1)
+         write(*,FMT_1) "Temporary instability Mdot = ", 1.0d-1 * msol / secyer
+         
+!         if( dabs(mdot) > 1.0d0*(s% mstar)*dsqrt(standard_cgrav * s% rho(1))) then
+         if( dabs(mdot) > 1.0d-1 * msol / secyer ) then
             ! Dynamically Unstable RLOF
             check_CE = .true.
+            write(*,*) "Dynamically unstable RLOF"
          else if (b% r(b% d_i) + R_accretor > b% separation) then
             ! Contact Binary
             check_CE = .true.
+            write(*,*) "Contact binary"
          else if (b% rl(b% a_i) < b% r(b% a_i)) then
             ! Double Common Envelope
             check_CE = .true.
+            write(*,*) "Double Common Envelope"
          else
             check_CE = .false.
          endif
+         
+         if (check_CE) write(*,*) "Entered Common Envelope"
      
       end function check_CE
 

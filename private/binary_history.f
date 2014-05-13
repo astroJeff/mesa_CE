@@ -42,6 +42,7 @@
       subroutine write_binary_history_info ( b, &
             how_many_extra_binary_history_columns, data_for_extra_binary_history_columns, ierr)
          use utils_lib, only:alloc_iounit, free_iounit
+         use star_def, only: star_info
          type (binary_info), pointer :: b
          interface
             include 'extra_binary_history_cols.inc'
@@ -99,13 +100,13 @@
          else
             numcols = size(b% history_column_spec, dim=1)
          end if
-         
+
          if (numcols == 0) then
             write(*,*) 'WARNING: do not have any output specified for binary logs.'
             if (io > 0) call free_iounit(io)
             return
          end if
-         
+
          num_extra_cols = how_many_extra_binary_history_columns(b)
          if (num_extra_cols > 0) then
             allocate( &
@@ -115,7 +116,9 @@
                return
             end if
             call data_for_extra_binary_history_columns( &
-               b, num_extra_cols, extra_col_names, extra_col_vals, ierr)
+! edited to add b% s_donor here!
+!               b, num_extra_cols, extra_col_names, extra_col_vals, ierr)
+               b, b% s_donor, num_extra_cols, extra_col_names, extra_col_vals, ierr)
             if (ierr /= 0) then
                deallocate(extra_col_names, extra_col_vals)
                if (io > 0) call free_iounit(io)
@@ -139,7 +142,7 @@
                return
             end if
          end if
-         
+
          if (write_flag .and. i0 == 1) then ! write parameters at start of log
             !call b% other_binary_history_data_initialize(b, ierr)
             !if (ierr /= 0) return

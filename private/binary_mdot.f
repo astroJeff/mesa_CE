@@ -357,7 +357,7 @@
          else
             b% mdot_thin = -b% mdot_thin0 * exp_cr(b% ritter_exponent)
          end if
-
+         
       end subroutine get_info_for_ritter
 
       subroutine get_info_for_kolb(b)
